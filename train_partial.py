@@ -54,9 +54,9 @@ def main(args):
         np.random.seed(args.seed)
 
     if args.gpu < 0:
-        device = "cpu"
+        device = torch.device( "cpu")
     else:
-        device = f"cuda:{args.gpu}"
+        device = torch.device( f"cuda:{args.gpu}")
 
     # Load dataset
     data = load_data(device, args)

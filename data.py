@@ -42,13 +42,13 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
     for etype in rel_subset:
         stype, _, dtype = g.to_canonical_etype(etype)
         src, dst = g.all_edges(etype=etype)
-        src = src.numpy()
-        dst = dst.numpy()
+        src = src.cpu().numpy()
+        dst = dst.cpu().numpy()
         new_edges[(stype, etype, dtype)] = (src, dst)
         new_edges[(dtype, etype + "_r", stype)] = (dst, src)
         ntypes.add(stype)
         ntypes.add(dtype)
-    new_g = dgl.heterograph(new_edges)
+    new_g = dgl.heterograph(new_edges).to(device)
 
     # set node feature and calc deg
     for ntype in ntypes:
@@ -143,10 +143,11 @@ def load_acm(device, args):
 def load_mag(device, args):
     from ogb.nodeproppred import DglNodePropPredDataset
     path = args.use_emb
-    home_dir = os.getenv("HOME")
+    home_dir = "./"
     dataset = DglNodePropPredDataset(
         name="ogbn-mag", root=os.path.join(home_dir, ".ogb", "dataset"))
     g, labels = dataset[0]
+    g=g.to(device)
     splitted_idx = dataset.get_idx_split()
     train_nid = splitted_idx["train"]['paper']
     val_nid = splitted_idx["valid"]['paper']
