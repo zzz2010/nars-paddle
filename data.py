@@ -6,7 +6,7 @@
 
 import os
 import numpy as np
-import torch
+import paddorch as torch
 import dgl
 import dgl.function as fn
 

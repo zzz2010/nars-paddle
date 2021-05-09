@@ -6,8 +6,8 @@
 
 import argparse
 import time
-import torch
-import torch.nn as nn
+import paddorch as torch
+import paddorch.nn as nn
 import numpy as np
 import logging
 from data import load_data, read_relation_subsets, gen_rel_subset_feature

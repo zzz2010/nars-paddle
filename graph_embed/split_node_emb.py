@@ -7,7 +7,7 @@
 import argparse
 import dgl
 import numpy as np
-import torch
+import paddorch as torch
 import os
 
 parser = argparse.ArgumentParser()
