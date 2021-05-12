@@ -8,3 +8,4 @@ ckpts
 *.pk
 train_triplets_*
 dataset
+/.cache/

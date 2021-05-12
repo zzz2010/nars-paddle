@@ -104,8 +104,8 @@ class PartialWeightedAggregator(nn.Module):
         for param, weight, discount in zip(
             self.agg_feats, self.weight_store, self.discounts
         ):
-            weight *= discount
-            weight[selected] += param.data
+            weight =weight* discount
+            weight[selected] =weight[selected]* param
         self.reset_parameters()
 
     def forward(self, args):

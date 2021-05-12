@@ -52,6 +52,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
 
     # set node feature and calc deg
     for ntype in ntypes:
+        print("debug ntype",ntype)
         num_nodes = new_g.number_of_nodes(ntype)
         if num_nodes < g.nodes[ntype].data["feat"].shape[0]:
             new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["feat"][:num_nodes, :]
@@ -62,7 +63,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
             _, _, dtype = new_g.to_canonical_etype(etype)
             if ntype == dtype:
                 deg = deg + new_g.in_degrees(etype=etype)
-        norm = 1.0 / deg.float()
+        norm =torch.convertTensor( 1.0 / deg)
         norm[torch.isinf(norm)] = 0
         new_g.nodes[ntype].data["norm"] = norm.view(-1, 1).to(device)
 
@@ -70,17 +71,20 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
 
     # compute k-hop feature
     for hop in range(1, args.R + 1):
+        print("debug hop", hop)
         ntype2feat = {}
         for etype in new_g.etypes:
+            print("debug etype", etype)
             stype, _, dtype = new_g.to_canonical_etype(etype)
             new_g[etype].update_all(fn.copy_u(f'hop_{hop-1}', 'm'), fn.sum('m', 'new_feat'))
             new_feat = new_g.nodes[dtype].data.pop("new_feat")
             assert("new_feat" not in new_g.nodes[stype].data)
             if dtype in ntype2feat:
-                ntype2feat[dtype] += new_feat
+                ntype2feat[dtype] = ntype2feat[dtype]+new_feat
             else:
                 ntype2feat[dtype] = new_feat
         for ntype in new_g.ntypes:
+            print("debug ntype", ntype)
             assert ntype in ntype2feat  # because subgraph is not directional
             feat_dict = new_g.nodes[ntype].data
             old_feat = feat_dict.pop(f"hop_{hop-1}")
@@ -147,15 +151,14 @@ def load_mag(device, args):
     dataset = DglNodePropPredDataset(
         name="ogbn-mag", root=os.path.join(home_dir, ".ogb", "dataset"))
     g, labels = dataset[0]
-    g=g.to(device)
     splitted_idx = dataset.get_idx_split()
     train_nid = splitted_idx["train"]['paper']
     val_nid = splitted_idx["valid"]['paper']
     test_nid = splitted_idx["test"]['paper']
     features = g.nodes['paper'].data['feat']
-    author_emb = torch.load(os.path.join(path, "author.pt")).float()
-    topic_emb = torch.load(os.path.join(path, "field_of_study.pt")).float()
-    institution_emb = torch.load(os.path.join(path, "institution.pt")).float()
+    author_emb = torch.Tensor(np.load(os.path.join(path, "author.npz"))['arr_0'].astype("float32"))
+    topic_emb = torch.Tensor(np.load(os.path.join(path, "field_of_study.npz"))['arr_0'].astype("float32"))
+    institution_emb = torch.Tensor(np.load(os.path.join(path, "institution.npz"))['arr_0'].astype("float32"))
 
     g.nodes["author"].data["feat"] = author_emb.to(device)
     g.nodes["institution"].data["feat"] = institution_emb.to(device)

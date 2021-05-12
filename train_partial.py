@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
+import pickle
 import time
 import paddorch as torch
 import paddorch.nn as nn
@@ -22,10 +23,11 @@ def preprocess_agg(g, metapaths, args, device, aggregator):
     for path_id, mpath in enumerate(metapaths):
         print(mpath)
         feats = gen_rel_subset_feature(g, mpath, args, device)
+        print("done gen_rel_subset_feature")
         for i in range(args.R + 1):
             feat = feats[i]
-            feat *= aggregator.weight_store[i][path_id].unsqueeze(0)
-            new_feats[i] += feat
+            feat =feat* aggregator.weight_store[i][path_id].unsqueeze(0)
+            new_feats[i] = new_feats[i]+feat
         feats = None
     return new_feats
 
@@ -72,13 +74,38 @@ def main(args):
     aggregator = PartialWeightedAggregator(
         num_feats, in_feats, num_hops, args.sample_size
     )
-
+    args.model_name = "{}_nh{}_R{}_fl{}_drop{}_idrop{}_ue{}_urs{}_seed{}_ss{}_re{}_lr{}_wd{}".format(
+        args.dataset,
+        args.num_hidden,
+        args.R,
+        args.ff_layer,
+        args.dropout,
+        args.input_dropout,
+        args.use_emb,
+        args.use_relation_subsets,
+        args.seed,
+        args.sample_size,
+        args.resample_every,
+        args.lr,
+        args.weight_decay
+    )
+    args.cache_path=".cache/"
+    args.ckpt_path = "checkpoints/"
+    args.model_folder=args.ckpt_path+"/"+args.model_name
+    import os
+    os.makedirs(args.cache_path,exist_ok=True)
+    os.makedirs(args.model_folder, exist_ok=True)
     # Preprocess neighbor-averaged features over sampled relation subgraphs
-    with torch.no_grad():
-        history_sum = preprocess_agg(g, rel_subsets, args, device, aggregator)
-        print("Done preprocessing")
+    cache_fn=args.cache_path+"/"+args.model_name+"_aggdata.pkl"
+    if os.path.isfile(cache_fn):
+        history_sum,labels=pickle.load(open(cache_fn,'rb'))
+        print("successfully loaded preprocess_agg data from",cache_fn)
+    else:
+        with torch.no_grad():
+            history_sum = preprocess_agg(g, rel_subsets, args, device, aggregator)
+            print("Done preprocessing")
+        pickle.dump([history_sum,labels],open(cache_fn,'wb'))
     labels = labels.to(device)
-
     # Set up logging
     logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
     logging.info(str(args))
@@ -96,6 +123,9 @@ def main(args):
             args.input_dropout,
         ),
     )
+    if len(args.load_model)>1:
+        model.load_dict(torch.load(args.load_model))
+        print("loaded model parameters from: ",args.load_model)
     logging.info("# Params: {}".format(get_n_params(model)))
     model.to(device)
 
@@ -164,6 +194,11 @@ def main(args):
             if val_acc > best_val:
                 best_val = val_acc
                 best_epoch = epoch
+                #save best model
+                torch.save(args.model_path+"/best.pth",model.state_dict())
+            torch.save(args.model_path + "/current.pth", model.state_dict())
+            torch.save(args.model_path + "/epoch_%d.pth"%epoch, model.state_dict())
+
 
         # update history and aggregation weight and resample
         if epoch % args.resample_every == 0:
@@ -213,6 +248,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--sample-size", type=int, default=3)
     parser.add_argument("--resample-every", type=int, default=10)
+    parser.add_argument("--load-model", type=str, default="")
     parser.add_argument(
         "--cpu-preprocess", action="store_true", help="Preprocess on CPU"
     )

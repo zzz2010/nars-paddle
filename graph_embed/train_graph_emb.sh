@@ -21,7 +21,7 @@ else
     exit -1
 fi
 
-DGLBACKEND=pytorch dglke_train \
+DGLBACKEND=paddorch dglke_train \
     --model TransE_l2 \
     --batch_size 1000 \
     --neg_sample_size 200 \
