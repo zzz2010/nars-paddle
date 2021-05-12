@@ -174,7 +174,7 @@ def load_mag(device, args):
         print(f"Randomly project paper feature from dimension {paper_dim} to {author_dim}")
 
     labels = labels['paper'].to(device).squeeze()
-    n_classes = int(labels.max() - labels.min()) + 1
+    n_classes = int(labels.numpy().max() - labels.numpy().min()) + 1
     # train_nid, val_nid, test_nid = np.array(train_nid), np.array(val_nid), np.array(test_nid)
     return g, labels, n_classes, torch.utils.data.TensorDataset(torch.convertTensor(train_nid)), torch.utils.data.TensorDataset(torch.convertTensor(val_nid)), torch.utils.data.TensorDataset(torch.convertTensor(test_nid))
 
