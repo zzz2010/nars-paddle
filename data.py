@@ -147,7 +147,7 @@ def load_acm(device, args):
 def load_mag(device, args):
     from ogb.nodeproppred import DglNodePropPredDataset
     path = args.use_emb
-    home_dir = "./"
+    home_dir = os.getenv("HOME")
     dataset = DglNodePropPredDataset(
         name="ogbn-mag", root=os.path.join(home_dir, ".ogb", "dataset"))
     g, labels = dataset[0]
