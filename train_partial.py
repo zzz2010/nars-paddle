@@ -7,6 +7,8 @@
 import argparse
 import pickle
 import time
+
+import dgl.data
 import paddorch as torch
 import paddorch.nn as nn
 import numpy as np
@@ -22,6 +24,7 @@ def preprocess_agg(g, metapaths, args, device, aggregator):
     print("Start generating features for each sub-metagraph:")
     for path_id, mpath in enumerate(metapaths):
         print(mpath)
+
         feats = gen_rel_subset_feature(g, mpath, args, device)
         print("done gen_rel_subset_feature")
         for i in range(args.R + 1):
@@ -59,6 +62,7 @@ def main(args):
         device = torch.device( "cpu")
     else:
         device = torch.device( f"cuda:{args.gpu}")
+        torch.cuda.manual_seed(args.seed)
 
     # Load dataset
     data = load_data(device, args)
@@ -74,7 +78,7 @@ def main(args):
     aggregator = PartialWeightedAggregator(
         num_feats, in_feats, num_hops, args.sample_size
     )
-    args.model_name = "{}_nh{}_R{}_fl{}_drop{}_idrop{}_ue{}_urs{}_seed{}_ss{}_re{}_lr{}_wd{}".format(
+    args.model_name = "{}_nh{}_R{}_fl{}_drop{}_idrop{}_ue{}_seed{}_ss{}_re{}_lr{}_wd{}".format(
         args.dataset,
         args.num_hidden,
         args.R,
@@ -82,7 +86,6 @@ def main(args):
         args.dropout,
         args.input_dropout,
         args.use_emb,
-        args.use_relation_subsets,
         args.seed,
         args.sample_size,
         args.resample_every,
@@ -99,7 +102,7 @@ def main(args):
     cache_fn=args.cache_path+"/"+args.model_name+"_aggdata.pkl"
     if os.path.isfile(cache_fn):
         history_sum,labels=pickle.load(open(cache_fn,'rb'))
-        print("successfully loaded preprocess_agg data from",cache_fn)
+        print("successfully loaded preprocess_agg cache data from",cache_fn)
     else:
         with torch.no_grad():
             history_sum = preprocess_agg(g, rel_subsets, args, device, aggregator)
@@ -139,12 +142,18 @@ def main(args):
         model.parameters(), lr=args.lr, weight_decay=args.weight_decay
     )
 
-    with torch.no_grad():
-        selected = np.random.choice(num_feats, args.sample_size, replace=False)
-        selected_subsets = [rel_subsets[i] for i in selected]
-        feats_selected = recompute_selected_subsets(
-            g, selected_subsets, args, num_paper, in_feats, device
-        )
+    cache_fn = args.cache_path + "/" + args.model_name + "_feats_selected.pkl"
+    if os.path.isfile(cache_fn):
+        feats_selected=pickle.load(open(cache_fn,'rb'))
+        print("successfully loaded feats_selected cache data from",cache_fn)
+    else:
+        with torch.no_grad():
+            selected = np.random.choice(num_feats, args.sample_size, replace=False)
+            selected_subsets = [rel_subsets[i] for i in selected]
+            feats_selected = recompute_selected_subsets(
+                g, selected_subsets, args, num_paper, in_feats, device
+            )
+        pickle.dump(feats_selected, open(cache_fn, 'wb'))
 
     # Start training
     best_epoch = 0
@@ -245,7 +254,7 @@ if __name__ == "__main__":
     parser.add_argument("--input-dropout", action="store_true")
     parser.add_argument("--use-emb", required=True, type=str)
     parser.add_argument("--use-relation-subsets", type=str, required=True)
-    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--sample-size", type=int, default=3)
     parser.add_argument("--resample-every", type=int, default=10)
     parser.add_argument("--load-model", type=str, default="")

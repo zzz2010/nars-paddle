@@ -52,7 +52,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
 
     # set node feature and calc deg
     for ntype in ntypes:
-        print("debug ntype",ntype)
+        print("debug ntype 1",ntype)
         num_nodes = new_g.number_of_nodes(ntype)
         if num_nodes < g.nodes[ntype].data["feat"].shape[0]:
             new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["feat"][:num_nodes, :]
@@ -60,6 +60,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
             new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["feat"]
         deg = 0
         for etype in new_g.etypes:
+            print("debug etype 1", etype)
             _, _, dtype = new_g.to_canonical_etype(etype)
             if ntype == dtype:
                 deg = deg + new_g.in_degrees(etype=etype)
