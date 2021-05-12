@@ -139,7 +139,7 @@ def main(args):
         # multi-label multi-class
         loss_fcn = nn.KLDivLoss(reduction="batchmean")
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=args.lr, weight_decay=args.weight_decay
+        model.parameters(), lr=args.lr, weight_decay=float(args.weight_decay)
     )
 
     cache_fn = args.cache_path + "/" + args.model_name + "_feats_selected.pkl"
@@ -158,6 +158,7 @@ def main(args):
     # Start training
     best_epoch = 0
     best_val = 0
+
     for epoch in range(1, args.num_epochs + 1):
         start = time.time()
         model.train()
@@ -204,9 +205,9 @@ def main(args):
                 best_val = val_acc
                 best_epoch = epoch
                 #save best model
-                torch.save(args.model_path+"/best.pth",model.state_dict())
-            torch.save(args.model_path + "/current.pth", model.state_dict())
-            torch.save(args.model_path + "/epoch_%d.pth"%epoch, model.state_dict())
+                torch.save(args.model_folder+"/best.pth",model.state_dict())
+            torch.save(args.model_folder + "/current.pth", model.state_dict())
+            torch.save(args.model_folder + "/epoch_%d.pth"%epoch, model.state_dict())
 
 
         # update history and aggregation weight and resample

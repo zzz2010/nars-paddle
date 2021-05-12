@@ -28,6 +28,7 @@ def train(model, feats, labels, train_nid, loss_fcn, optimizer, batch_size, hist
     dataloader = torch.utils.data.DataLoader(
         train_nid, batch_size=batch_size, shuffle=True, drop_last=False)
     for batch in dataloader:
+        batch=torch.cat(batch).squeeze()
         batch_feats = [x[batch].to(device) for x in feats]
         if history is not None:
             # Train aggregator partially using history
@@ -43,10 +44,11 @@ def test(model, feats, labels, train_nid, val_nid, test_nid, evaluator, batch_si
     num_nodes = labels.shape[0]
     device = labels.device
     dataloader = torch.utils.data.DataLoader(
-        torch.arange(num_nodes), batch_size=batch_size,
+        torch.utils.data.TensorDataset(torch.arange(num_nodes)), batch_size=batch_size,
         shuffle=False, drop_last=False)
     scores = []
     for batch in dataloader:
+        batch = torch.cat(batch).squeeze().astype("int64")
         batch_feats = [feat[batch].to(device) for feat in feats]
         if history is not None:
             # Train aggregator partially using history
@@ -67,7 +69,7 @@ def test(model, feats, labels, train_nid, val_nid, test_nid, evaluator, batch_si
 
 def batched_acc(pred, labels):
     # testing accuracy for single label multi-class prediction
-    return (torch.argmax(pred, dim=1) == labels,)
+    return (torch.argmax(pred, 1) == labels,)
 
 
 def get_evaluator(dataset):
@@ -79,8 +81,9 @@ def get_evaluator(dataset):
 
 
 def compute_mean(metrics, nid):
+    nid=torch.cat(nid[:])
     num_nodes = len(nid)
-    return [m[nid].float().sum().item() / num_nodes for  m in metrics]
+    return [m.float()[nid].sum().item() / num_nodes for  m in metrics]
 
 
 ###############################################################################

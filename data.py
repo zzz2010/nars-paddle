@@ -175,8 +175,8 @@ def load_mag(device, args):
 
     labels = labels['paper'].to(device).squeeze()
     n_classes = int(labels.max() - labels.min()) + 1
-    train_nid, val_nid, test_nid = np.array(train_nid), np.array(val_nid), np.array(test_nid)
-    return g, labels, n_classes, train_nid, val_nid, test_nid
+    # train_nid, val_nid, test_nid = np.array(train_nid), np.array(val_nid), np.array(test_nid)
+    return g, labels, n_classes, torch.utils.data.TensorDataset(torch.convertTensor(train_nid)), torch.utils.data.TensorDataset(torch.convertTensor(val_nid)), torch.utils.data.TensorDataset(torch.convertTensor(test_nid))
 
 
 def load_oag(device, args):
