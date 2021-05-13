@@ -17,6 +17,10 @@ from data import load_data, read_relation_subsets, gen_rel_subset_feature
 from model import SIGN, PartialWeightedAggregator
 from utils import get_n_params, get_evaluator, train, test
 
+from paddle import fluid
+build_strategy = fluid.BuildStrategy()
+
+build_strategy.enable_inplace =True# 开启Inplace策略
 
 def preprocess_agg(g, metapaths, args, device, aggregator):
     num_paper, feat_size = g.nodes["paper"].data["feat"].shape
