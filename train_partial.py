@@ -147,7 +147,7 @@ def main(args):
 
     cache_fn = args.cache_path + "/" + args.model_name + "_feats_selected.pkl"
     if os.path.isfile(cache_fn):
-        feats_selected=pickle.load(open(cache_fn,'rb'))
+        feats_selected=pickle.load(open(cache_fn,'rb'), protocol=4)
         print("successfully loaded feats_selected cache data from",cache_fn)
     else:
         with torch.no_grad():
@@ -156,7 +156,7 @@ def main(args):
             feats_selected = recompute_selected_subsets(
                 g, selected_subsets, args, num_paper, in_feats, device
             )
-        pickle.dump(feats_selected, open(cache_fn, 'wb'))
+        pickle.dump(feats_selected, open(cache_fn, 'wb'), protocol=4)
 
     # Start training
     best_epoch = 0
