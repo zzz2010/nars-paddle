@@ -9,7 +9,9 @@ import numpy as np
 import paddorch as torch
 import dgl
 import dgl.function as fn
+import ogb.nodeproppred
 
+use_numpy = ogb.nodeproppred.dataset_dgl.use_numpy
 
 ###############################################################################
 # Loading Relation Subsets
@@ -64,9 +66,14 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
             _, _, dtype = new_g.to_canonical_etype(etype)
             if ntype == dtype:
                 deg = deg + new_g.in_degrees(etype=etype)
-        norm =torch.convertTensor( 1.0 / deg)
-        norm[torch.isinf(norm)] = 0
-        new_g.nodes[ntype].data["norm"] = norm.view(-1, 1).to(device)
+        if not use_numpy:
+            norm =torch.convertTensor( 1.0 / deg)
+            norm[torch.isinf(norm)] = 0
+            new_g.nodes[ntype].data["norm"] = norm.view(-1, 1).to(device)
+        else:
+            norm =  (1.0 / deg)
+            norm[np.isinf(norm)] = 0
+            new_g.nodes[ntype].data["norm"] = norm.reshape([-1, 1])
 
     res = []
 
@@ -90,10 +97,10 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
             feat_dict = new_g.nodes[ntype].data
             old_feat = feat_dict.pop(f"hop_{hop-1}")
             if ntype == "paper":
-                res.append(old_feat.cpu())
-            feat_dict[f"hop_{hop}"] = ntype2feat.pop(ntype).mul_(feat_dict["norm"])
+                res.append(old_feat )
+            feat_dict[f"hop_{hop}"] = ntype2feat.pop(ntype)*(feat_dict["norm"])
 
-    res.append(new_g.nodes["paper"].data.pop(f"hop_{args.R}").cpu())
+    res.append(new_g.nodes["paper"].data.pop(f"hop_{args.R}") )
     return res
 
 
@@ -147,8 +154,7 @@ def load_acm(device, args):
 
 def load_mag(device, args):
     from ogb.nodeproppred import DglNodePropPredDataset
-    import ogb
-    use_numpy=ogb.nodeproppred.dataset_dgl.use_numpy
+
     path = args.use_emb
     home_dir = os.getenv("HOME")
     dataset = DglNodePropPredDataset(
