@@ -164,7 +164,7 @@ def load_mag(device, args):
     train_nid = splitted_idx["train"]['paper']
     val_nid = splitted_idx["valid"]['paper']
     test_nid = splitted_idx["test"]['paper']
-    features = g.nodes['paper'].data['feat'].numpy().astype("float32")
+    features = g.nodes['paper'].data['feat'].astype("float32")
     author_emb =  np.load(os.path.join(path, "author.npz"))['arr_0'].astype("float32")
     topic_emb = np.load(os.path.join(path, "field_of_study.npz"))['arr_0'].astype("float32")
     institution_emb =  np.load(os.path.join(path, "institution.npz"))['arr_0'].astype("float32")
@@ -225,7 +225,10 @@ def load_oag(device, args):
     affiliation_emb = torch.load(os.path.join(path, "affiliation.pt")).float().to(device)
     with open(os.path.join(args.data_dir, "paper.npy"), "rb") as f:
         # loading lang features of paper provided by HGT author
-        paper_feat = torch.from_numpy(np.load(f)).float().to(device)
+        if use_numpy:
+            paper_feat=np.load(f).astype("float32")
+        else:
+            paper_feat = torch.from_numpy(np.load(f)).float().to(device)
     author_dim = author_emb.shape[1]
     paper_dim = paper_feat.shape[1]
     if author_dim < paper_dim:
@@ -291,7 +294,7 @@ def load_acm_raw():
     features = torch.FloatTensor(p_vs_t.toarray())
 
     pc_p, pc_c = p_vs_c.nonzero()
-    labels = np.zeros(len(p_selected), dtype=np.int64)
+    labels = np.zeros(len(p_selected), dtype=np.int32)
     for conf_id, label_id in zip(conf_ids, label_ids):
         labels[pc_p[pc_c == conf_id]] = label_id
     labels = torch.LongTensor(labels)

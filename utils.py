@@ -48,7 +48,7 @@ def test(model, feats, labels, train_nid, val_nid, test_nid, evaluator, batch_si
         shuffle=False, drop_last=False)
     scores = []
     for batch in dataloader:
-        batch = torch.cat(batch).squeeze().astype("int64")
+        batch = torch.cat(batch).squeeze().astype("int32")
         batch_feats = [feat[batch].to(device) for feat in feats]
         if history is not None:
             # Train aggregator partially using history
