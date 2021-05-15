@@ -24,7 +24,7 @@ build_strategy.enable_inplace =True# 开启Inplace策略
 
 def preprocess_agg(g, metapaths, args, device, aggregator):
     num_paper, feat_size = g.nodes["paper"].data["feat"].shape
-    new_feats = [torch.zeros(num_paper, feat_size) for _ in range(args.R + 1)]
+    new_feats = [np.zeros(num_paper, feat_size) for _ in range(args.R + 1)]
     print("Start generating features for each sub-metagraph:")
     for path_id, mpath in enumerate(metapaths):
         print(mpath)
@@ -33,7 +33,7 @@ def preprocess_agg(g, metapaths, args, device, aggregator):
         print("done gen_rel_subset_feature")
         for i in range(args.R + 1):
             feat = feats[i]
-            feat =feat* aggregator.weight_store[i][path_id].unsqueeze(0)
+            feat =feat* aggregator.weight_store[i][path_id].numpy()[np.newaxis,:]
             new_feats[i] = new_feats[i]+feat
         feats = None
     return new_feats
