@@ -147,6 +147,8 @@ def load_acm(device, args):
 
 def load_mag(device, args):
     from ogb.nodeproppred import DglNodePropPredDataset
+    import ogb
+    use_numpy=ogb.nodeproppred.dataset_dgl.use_numpy
     path = args.use_emb
     home_dir = os.getenv("HOME")
     dataset = DglNodePropPredDataset(
@@ -157,14 +159,18 @@ def load_mag(device, args):
     val_nid = splitted_idx["valid"]['paper']
     test_nid = splitted_idx["test"]['paper']
     features = g.nodes['paper'].data['feat']
-    author_emb = torch.Tensor(np.load(os.path.join(path, "author.npz"))['arr_0'].astype("float32"))
-    topic_emb = torch.Tensor(np.load(os.path.join(path, "field_of_study.npz"))['arr_0'].astype("float32"))
-    institution_emb = torch.Tensor(np.load(os.path.join(path, "institution.npz"))['arr_0'].astype("float32"))
+    author_emb =  np.load(os.path.join(path, "author.npz"))['arr_0'].astype("float32")
+    topic_emb = np.load(os.path.join(path, "field_of_study.npz"))['arr_0'].astype("float32")
+    institution_emb =  np.load(os.path.join(path, "institution.npz"))['arr_0'].astype("float32")
+    if not use_numpy:
+        author_emb = torch.Tensor(author_emb)
+        topic_emb = torch.Tensor(topic_emb)
+        institution_emb = torch.Tensor(institution_emb)
 
-    g.nodes["author"].data["feat"] = author_emb.to(device)
-    g.nodes["institution"].data["feat"] = institution_emb.to(device)
-    g.nodes["field_of_study"].data["feat"] = topic_emb.to(device)
-    g.nodes["paper"].data["feat"] = features.to(device)
+    g.nodes["author"].data["feat"] = author_emb
+    g.nodes["institution"].data["feat"] = institution_emb
+    g.nodes["field_of_study"].data["feat"] = topic_emb
+    g.nodes["paper"].data["feat"] = features
     paper_dim = g.nodes["paper"].data["feat"].shape[1]
     author_dim = g.nodes["author"].data["feat"].shape[1]
     if paper_dim != author_dim:
@@ -173,8 +179,12 @@ def load_mag(device, args):
         g.nodes["paper"].data["feat"] = torch.matmul(paper_feat, rand_weight.to(device))
         print(f"Randomly project paper feature from dimension {paper_dim} to {author_dim}")
 
-    labels = labels['paper'].to(device).squeeze()
-    n_classes = int(labels.numpy().max() - labels.numpy().min()) + 1
+    if not use_numpy:
+        labels = labels['paper'].to(device).squeeze()
+        n_classes = int(labels.numpy().max() - labels.numpy().min()) + 1
+    else:
+        labels = labels['paper'].squeeze()
+        n_classes = int(labels.max() - labels.min()) + 1
     # train_nid, val_nid, test_nid = np.array(train_nid), np.array(val_nid), np.array(test_nid)
     return g, labels, n_classes, torch.utils.data.TensorDataset(torch.convertTensor(train_nid)), torch.utils.data.TensorDataset(torch.convertTensor(val_nid)), torch.utils.data.TensorDataset(torch.convertTensor(test_nid))
 
