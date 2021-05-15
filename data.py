@@ -73,7 +73,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
         else:
             norm =  (1.0 / deg)
             norm[np.isinf(norm)] = 0
-            new_g.nodes[ntype].data["norm"] = norm.reshape([-1, 1])
+            new_g.nodes[ntype].data["norm"] = norm.reshape([-1, 1]).astype("float32")
 
     res = []
 
@@ -164,7 +164,7 @@ def load_mag(device, args):
     train_nid = splitted_idx["train"]['paper']
     val_nid = splitted_idx["valid"]['paper']
     test_nid = splitted_idx["test"]['paper']
-    features = g.nodes['paper'].data['feat']
+    features = g.nodes['paper'].data['feat'].astype("float32")
     author_emb =  np.load(os.path.join(path, "author.npz"))['arr_0'].astype("float32")
     topic_emb = np.load(os.path.join(path, "field_of_study.npz"))['arr_0'].astype("float32")
     institution_emb =  np.load(os.path.join(path, "institution.npz"))['arr_0'].astype("float32")
@@ -180,9 +180,12 @@ def load_mag(device, args):
     paper_dim = g.nodes["paper"].data["feat"].shape[1]
     author_dim = g.nodes["author"].data["feat"].shape[1]
     if paper_dim != author_dim:
-        paper_feat = g.nodes["paper"].data.pop("feat")
+        paper_feat = g.nodes["paper"].data.pop("feat").astype("float32")
         rand_weight = torch.Tensor(paper_dim, author_dim).uniform_(-0.5, 0.5)
-        g.nodes["paper"].data["feat"] = torch.matmul(paper_feat, rand_weight.to(device))
+        if not use_numpy:
+            g.nodes["paper"].data["feat"] = torch.matmul(paper_feat, rand_weight.to(device))
+        else:
+            g.nodes["paper"].data["feat"] = np.matmul(paper_feat, rand_weight).astype("float32")
         print(f"Randomly project paper feature from dimension {paper_dim} to {author_dim}")
 
     if not use_numpy:
