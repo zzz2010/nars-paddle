@@ -69,11 +69,11 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
             if ntype == dtype:
                 deg = deg + new_g.in_degrees(etype=etype)
         if not use_numpy:
-            norm =torch.convertTensor( 1.0 / deg)
+            norm =torch.convertTensor( 1.0 / (deg+0.1))
             norm[torch.isinf(norm)] = 0
             new_g.nodes[ntype].data["norm"] = norm.view(-1, 1).to(device)
         else:
-            norm =  (1.0 / deg)
+            norm =  1.0 / (deg+0.1)
             norm[np.isinf(norm)] = 0
             new_g.nodes[ntype].data["norm"] = norm.reshape([-1, 1]).astype("float32")
 

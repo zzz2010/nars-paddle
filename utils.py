@@ -24,15 +24,17 @@ def get_n_params(model):
 
 def train(model, feats, labels, train_nid, loss_fcn, optimizer, batch_size, history=None):
     model.train()
-    device = labels.device
+    history = torch.Tensor(history)
+    labels=torch.Tensor(labels)
     dataloader = torch.utils.data.DataLoader(
         train_nid, batch_size=batch_size, shuffle=True, drop_last=False)
+    feats=[torch.Tensor(x) for x in feats]
     for batch in dataloader:
         batch=torch.cat(batch).squeeze()
-        batch_feats = [x[batch].to(device) for x in feats]
+        batch_feats = [x[batch]  for x in feats]
         if history is not None:
             # Train aggregator partially using history
-            batch_feats = (batch_feats, [x[batch].to(device) for x in history])
+            batch_feats = (batch_feats, [x[batch]  for x in history])
         loss = loss_fcn(model(batch_feats), labels[batch])
         optimizer.zero_grad()
         loss.backward()
@@ -42,17 +44,19 @@ def train(model, feats, labels, train_nid, loss_fcn, optimizer, batch_size, hist
 def test(model, feats, labels, train_nid, val_nid, test_nid, evaluator, batch_size, history=None):
     model.eval()
     num_nodes = labels.shape[0]
-    device = labels.device
+    labels = torch.Tensor(labels)
+    feats = [torch.Tensor(x) for x in feats]
     dataloader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(torch.arange(num_nodes)), batch_size=batch_size,
         shuffle=False, drop_last=False)
     scores = []
+    history=torch.Tensor(history)
     for batch in dataloader:
         batch = torch.cat(batch).squeeze().astype("int32")
-        batch_feats = [feat[batch].to(device) for feat in feats]
+        batch_feats = [feat[batch] for feat in feats]
         if history is not None:
             # Train aggregator partially using history
-            batch_feats = (batch_feats, [x[batch].to(device) for x in history])
+            batch_feats = (batch_feats, [x[batch]  for x in history])
         pred = model(batch_feats)
         scores.append(evaluator(pred, labels[batch]))
     # For each evaluation metric, concat along node dimension
