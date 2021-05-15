@@ -51,7 +51,7 @@ def recompute_selected_subsets(g, selected_subsets, args, num_nodes, feat_size, 
         for i, subset in enumerate(selected_subsets):
             rel_feats = gen_rel_subset_feature(g, subset, args, device)
             for hop in range(args.R + 1):
-                feats[hop][:, i, :] = rel_feats[i]
+                feats[hop][:, i, :] = rel_feats[hop]
     end = time.time()
     print("Recompute takes {:.4f} sec".format(end - start))
     return feats

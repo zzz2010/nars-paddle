@@ -56,7 +56,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
 
     # set node feature and calc deg
     for ntype in ntypes:
-        print("debug ntype 1",ntype)
+
         num_nodes = new_g.number_of_nodes(ntype)
         if num_nodes < g.nodes[ntype].data["feat"].shape[0]:
             new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["feat"][:num_nodes, :]
@@ -64,7 +64,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
             new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["feat"]
         deg = 0
         for etype in new_g.etypes:
-            print("debug etype 1", etype)
+
             _, _, dtype = new_g.to_canonical_etype(etype)
             if ntype == dtype:
                 deg = deg + new_g.in_degrees(etype=etype)
@@ -81,10 +81,10 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
 
     # compute k-hop feature
     for hop in range(1, args.R + 1):
-        print("debug hop", hop)
+
         ntype2feat = {}
         for etype in new_g.etypes:
-            print("debug etype", etype)
+
             stype, _, dtype = new_g.to_canonical_etype(etype)
             new_g[etype].update_all(fn.copy_u(f'hop_{hop-1}', 'm'), fn.sum('m', 'new_feat'))
             new_feat = new_g.nodes[dtype].data.pop("new_feat")
@@ -94,7 +94,7 @@ def gen_rel_subset_feature(g, rel_subset, args, device):
             else:
                 ntype2feat[dtype] = new_feat
         for ntype in new_g.ntypes:
-            print("debug ntype", ntype)
+
             assert ntype in ntype2feat  # because subgraph is not directional
             feat_dict = new_g.nodes[ntype].data
             old_feat = feat_dict.pop(f"hop_{hop-1}")
