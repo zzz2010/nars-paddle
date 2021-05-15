@@ -25,7 +25,7 @@ def get_n_params(model):
 def train(model, feats, labels, train_nid, loss_fcn, optimizer, batch_size, history=None):
     model.train()
     history = torch.Tensor(history)
-    labels=torch.Tensor(labels)
+    labels=torch.Tensor(labels).long()
     dataloader = torch.utils.data.DataLoader(
         train_nid, batch_size=batch_size, shuffle=True, drop_last=False)
     feats=[torch.Tensor(x) for x in feats]
@@ -44,7 +44,7 @@ def train(model, feats, labels, train_nid, loss_fcn, optimizer, batch_size, hist
 def test(model, feats, labels, train_nid, val_nid, test_nid, evaluator, batch_size, history=None):
     model.eval()
     num_nodes = labels.shape[0]
-    labels = torch.Tensor(labels)
+    labels = torch.Tensor(labels).long()
     feats = [torch.Tensor(x) for x in feats]
     dataloader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(torch.arange(num_nodes)), batch_size=batch_size,
