@@ -13,13 +13,13 @@ import logging
 from data import load_data, read_relation_subsets, gen_rel_subset_feature
 from model import SIGN, WeightedAggregator
 from utils import get_n_params, get_evaluator, train, test
-
+import pickle
 
 def preprocess_features(g, rel_subsets, args, device):
     # pre-process heterogeneous graph g to generate neighbor-averaged features
     # for each relation subsets
     num_paper, feat_size = g.nodes["paper"].data["feat"].shape
-    new_feats = [torch.zeros(num_paper, len(rel_subsets), feat_size) for _ in range(args.R + 1)]
+    new_feats = [np.zeros(num_paper, len(rel_subsets), feat_size) for _ in range(args.R + 1)]
     print("Start generating features for each sub-metagraph:")
     for subset_id, subset in enumerate(rel_subsets):
         print(subset)
@@ -40,18 +40,47 @@ def main(args):
         device = torch.device("cpu")
     else:
         device = torch.device(f"cuda:{args.gpu}")
+        torch.cuda.manual_seed(args.seed)
 
     # Load dataset
     data = load_data(device, args)
+    print("loaded data")
     g, labels, num_classes, train_nid, val_nid, test_nid = data
     evaluator = get_evaluator(args.dataset)
-
+    print("loaded evaluator")
     # Preprocess neighbor-averaged features over sampled relation subgraphs
     rel_subsets = read_relation_subsets(args.use_relation_subsets)
-    with torch.no_grad():
-        feats = preprocess_features(g, rel_subsets, args, device)
-        print("Done preprocessing")
-    labels = labels.to(device)
+    args.model_name = "{}_nh{}_R{}_fl{}_drop{}_idrop{}_ue{}_seed{}_ss{}_re{}_lr{}_wd{}".format(
+        args.dataset,
+        args.num_hidden,
+        args.R,
+        args.ff_layer,
+        args.dropout,
+        args.input_dropout,
+        args.use_emb,
+        args.seed,
+        args.sample_size,
+        args.resample_every,
+        args.lr,
+        args.weight_decay
+    )
+    args.cache_path = ".cache/"
+    args.ckpt_path = "checkpoints/"
+    args.model_folder = args.ckpt_path + "/" + args.model_name
+    import os
+    os.makedirs(args.cache_path, exist_ok=True)
+    os.makedirs(args.model_folder, exist_ok=True)
+    # Preprocess neighbor-averaged features over sampled relation subgraphs
+    cache_fn = args.cache_path + "/" + args.model_name + "_feats.pkl"
+    if os.path.isfile(cache_fn):
+        feats = pickle.load(open(cache_fn, 'rb'))
+        print("successfully loaded preprocess_features cache data from", cache_fn)
+    else:
+        with torch.no_grad():
+            feats = preprocess_features(g, rel_subsets, args, device)
+            print("Done preprocessing")
+        pickle.dump(feats, open(cache_fn, 'wb'))
+
     # Release the graph since we are not going to use it later
     g = None
 
@@ -130,7 +159,7 @@ if __name__ == "__main__":
     parser.add_argument("--input-dropout", action="store_true")
     parser.add_argument("--use-emb", required=True, type=str)
     parser.add_argument("--use-relation-subsets", type=str, required=True)
-    parser.add_argument("--seed", type=int, default=None )
+    parser.add_argument("--seed", type=int, default=0 )
     parser.add_argument("--cpu-preprocess", action="store_true",
                         help="Preprocess on CPU")
     args = parser.parse_args()
