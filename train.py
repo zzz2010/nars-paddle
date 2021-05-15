@@ -50,7 +50,7 @@ def main(args):
     print("loaded evaluator")
     # Preprocess neighbor-averaged features over sampled relation subgraphs
     rel_subsets = read_relation_subsets(args.use_relation_subsets)
-    args.model_name = "{}_nh{}_R{}_fl{}_drop{}_idrop{}_ue{}_seed{}_ss{}_re{}_lr{}_wd{}".format(
+    args.model_name = "{}_nh{}_R{}_fl{}_drop{}_idrop{}_ue{}_seed{}_lr{}_wd{}".format(
         args.dataset,
         args.num_hidden,
         args.R,
@@ -59,8 +59,6 @@ def main(args):
         args.input_dropout,
         args.use_emb,
         args.seed,
-        args.sample_size,
-        args.resample_every,
         args.lr,
         args.weight_decay
     )
