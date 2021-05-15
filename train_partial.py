@@ -24,7 +24,7 @@ build_strategy.enable_inplace =True# 开启Inplace策略
 
 def preprocess_agg(g, metapaths, args, device, aggregator):
     num_paper, feat_size = g.nodes["paper"].data["feat"].shape
-    new_feats = [np.zeros(num_paper, feat_size) for _ in range(args.R + 1)]
+    new_feats = [np.zeros([num_paper, feat_size]) for _ in range(args.R + 1)]
     print("Start generating features for each sub-metagraph:")
     for path_id, mpath in enumerate(metapaths):
         print(mpath)
@@ -45,7 +45,7 @@ def recompute_selected_subsets(g, selected_subsets, args, num_nodes, feat_size, 
     start = time.time()
     with torch.no_grad():
         feats = [
-            torch.zeros(num_nodes, len(selected_subsets), feat_size)
+            np.zeros([num_nodes, len(selected_subsets), feat_size])
             for _ in range(args.R + 1)
         ]
         for i, subset in enumerate(selected_subsets):
@@ -112,7 +112,7 @@ def main(args):
             history_sum = preprocess_agg(g, rel_subsets, args, device, aggregator)
             print("Done preprocessing")
         pickle.dump([history_sum,labels],open(cache_fn,'wb'))
-    labels = labels.to(device)
+
     # Set up logging
     logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
     logging.info(str(args))
@@ -134,7 +134,6 @@ def main(args):
         model.load_dict(torch.load(args.load_model))
         print("loaded model parameters from: ",args.load_model)
     logging.info("# Params: {}".format(get_n_params(model)))
-    model.to(device)
 
     if len(labels.shape) == 1:
         # single label multi-class
