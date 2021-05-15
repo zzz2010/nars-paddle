@@ -19,7 +19,7 @@ def preprocess_features(g, rel_subsets, args, device):
     # pre-process heterogeneous graph g to generate neighbor-averaged features
     # for each relation subsets
     num_paper, feat_size = g.nodes["paper"].data["feat"].shape
-    new_feats = [np.zeros(num_paper, len(rel_subsets), feat_size) for _ in range(args.R + 1)]
+    new_feats = [np.zeros((num_paper, len(rel_subsets), feat_size)) for _ in range(args.R + 1)]
     print("Start generating features for each sub-metagraph:")
     for subset_id, subset in enumerate(rel_subsets):
         print(subset)
