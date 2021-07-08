@@ -1,4 +1,5 @@
 Neighbor Averaging over Relation Subgraphs (NARS)
+This is replementation of NARS using DL framework PaddlePaddle.
 =================
 NARS is an algorithm for node classification on heterogeneous graphs, based on
 scalable neighbor averaging techniques that have been previously used in e.g.
@@ -13,18 +14,12 @@ For more details, please check out our paper:
 Setup
 -------------------
 ### Dependencies
-- torch==1.5.1+cu101
-- dgl-cu101==0.4.3.post2
-- ogb==1.2.1
+- PaddlePaddle, version 2.0.0
+- [dgl-paddle](https://gitee.com/littledesk/dgl)
+- [ogb-paddle](https://gitee.com/littledesk/ogb-paddle)
 - dglke==0.1.0
 
-
-### Docker
-We have prepared a dockerfile for building a container with clean environment
-and all required dependencies. Please checkout instructions in
-[docker](./docker).
-
-
+ 
 Data Preparation
 ------------------------
 ### Download and pre-process OAG dataset (optional)
