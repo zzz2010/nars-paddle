@@ -1,4 +1,6 @@
 Neighbor Averaging over Relation Subgraphs (NARS)
+
+
 This is replementation of NARS using DL framework PaddlePaddle.
 =================
 NARS is an algorithm for node classification on heterogeneous graphs, based on
